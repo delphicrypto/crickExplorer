@@ -5,7 +5,9 @@ Block explorer for Crick blockchain
 
 `
 go get github.com/gdamore/tcell
+
 go get github.com/rivo/tview
+
 go get github.com/fatih/color
 `
 
