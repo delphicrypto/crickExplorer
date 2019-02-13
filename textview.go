@@ -39,5 +39,5 @@ func TextView1(nextSlide func()) (title string, content tview.Primitive) {
 		}
 	}()
 	textView.SetBorder(true).SetTitle("TextView implements io.Writer")
-	return "Last Blocks", textView
+	return "List", textView
 }

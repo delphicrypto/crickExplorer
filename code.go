@@ -7,7 +7,7 @@ import (
 )
 
 // The width of the code window.
-const codeWidth = 56
+const codeWidth = 108
 
 // Code returns a primitive which displays the given primitive (with the given
 // size) on the left side and its source code on the right side.

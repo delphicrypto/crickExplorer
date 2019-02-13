@@ -55,5 +55,5 @@ func Grid(nextSlide func()) (title string, content tview.Primitive) {
 	pages.AddPage("grid", grid, true, true).
 		AddPage("modal", modal, false, false)
 
-	return "Grid", pages
+	return "Graphs", pages
 }

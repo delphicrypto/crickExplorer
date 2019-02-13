@@ -23,8 +23,8 @@ const logo = `
 `
 
 const (
-	subtitle   = `Blockchain Explorer`
-	navigation = `Ctrl-N: Next slide    Ctrl-P: Previous slide    Ctrl-C: Exit`
+	subtitle   = `[::bu]Blockchain Explorer`
+	navigation = `Ctrl-N: Next    Ctrl-P: Previous    Ctrl-C: Exit`
 )
 
 // Cover returns the cover page.
@@ -50,7 +50,7 @@ func Cover(nextSlide func()) (title string, content tview.Primitive) {
 		SetBorders(0, 0, 0, 0, 0, 0).
 		AddText(subtitle, true, tview.AlignCenter, tcell.ColorWhite).
 		AddText("", true, tview.AlignCenter, tcell.ColorWhite).
-		AddText(navigation, true, tview.AlignCenter, tcell.ColorDarkMagenta)
+		AddText(navigation, true, tview.AlignCenter, tcell.ColorAqua)
 
 	// Create a Flex layout that centers the logo and subtitle.
 	flex := tview.NewFlex().
