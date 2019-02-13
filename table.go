@@ -82,7 +82,7 @@ func Table(nextSlide func()) (title string, content tview.Primitive) {
             SetSeparator(' ')
     app.SetFocus(table)
 	code := tview.NewTextView().
-		SetWrap(false).
+		SetWrap(true).
 		SetDynamicColors(true)
 	code.SetBorderPadding(1, 1, 2, 0)
 
@@ -167,5 +167,5 @@ func Table(nextSlide func()) (title string, content tview.Primitive) {
 
 	return "Crick Chain", tview.NewFlex().
 		AddItem(table, 0, 1, true).
-		AddItem(code, codeWidth, 1, false)
+		AddItem(code, 0, 1, false)
 }
