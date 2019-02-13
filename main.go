@@ -1,185 +1,108 @@
+/*
+A presentation of the tview package, implemented with tview.
+
+Navigation
+
+The presentation will advance to the next slide when the primitive demonstrated
+in the current slide is left (usually by hitting Enter or Escape). Additionally,
+the following shortcuts can be used:
+
+  - Ctrl-N: Jump to next slide
+  - Ctrl-P: Jump to previous slide
+*/
 package main
 
 import (
 	"fmt"
+	"strconv"
+	//"time"
 	"os"
-	"math"
-	ui "github.com/VladimirMarkelov/clui"
-    cc "github.com/delphicrypto/blockchain_go"
+
+	"github.com/gdamore/tcell"
+	"github.com/rivo/tview"
+	cc "github.com/delphicrypto/blockchain_go"
 )
 
-func customColored(d *ui.BarDataCell) {
-	part := d.TotalMax / 3
-	if d.ID%2 == 0 {
-		if d.Value <= part {
-			d.Fg = ui.ColorGreen
-		} else if d.Value > 2*part {
-			d.Fg = ui.ColorRed
-		} else {
-			d.Fg = ui.ColorBlue
-		}
-	} else {
-		d.Ch = '#'
-		if d.Value <= part {
-			d.Fg = ui.ColorGreenBold
-		} else if d.Value > 2*part {
-			d.Fg = ui.ColorRedBold
-		} else {
-			d.Fg = ui.ColorBlueBold
-		}
-	}
-}
+// Slide is a function which returns the slide's main primitive and its title.
+// It receives a "nextSlide" function which can be called to advance the
+// presentation to the next slide.
+type Slide func(nextSlide func()) (title string, content tview.Primitive)
 
-func getBarData(nodeID string) []ui.BarData {
-	chain := cc.NewBlockchain(nodeID)
+// The application.
+var app = tview.NewApplication()
+var chain *cc.Blockchain
+var dbFile string
+func updateTime() {
+	chain = cc.NewBlockchain(dbFile)
 	defer chain.CloseDB()
-
-	bci := chain.Iterator()
- 	d := []ui.BarData{}
- 	block := bci.Next()
-	for i := 0; i < 4; i++ {
-		if len(block.PrevBlockHash) == 0 {
-			break
-		}
-		prevBlock := bci.Next()
-		d = append(d, ui.BarData{Value: math.Min(30, float64(block.Timestamp - prevBlock.Timestamp)/(1e9)), Title: fmt.Sprintf("Block %d", block.Height), Fg: ui.ColorBlue})
-		block = prevBlock
-	}
-	return d
+	// for {
+	// 	time.Sleep(refreshInterval)
+	// 	app.QueueUpdateDraw(func() {
+	// 		sideBar.SetText(currentTimeString())
+	// 	})
+	// }
 }
 
-
-
-func createView(nodeID string) *ui.BarChart {
-
-	view := ui.AddWindow(0, 0, 10, 7, "Crick Explorer")
-	bch := ui.CreateBarChart(view, 40, 12, 1)
-
-	frmChk := ui.CreateFrame(view, 8, 5, ui.BorderNone, ui.Fixed)
-	frmChk.SetPack(ui.Vertical)
-	chkTitles := ui.CreateCheckBox(frmChk, ui.AutoSize, "Show Titles", ui.Fixed)
-	chkMarks := ui.CreateCheckBox(frmChk, ui.AutoSize, "Show Marks", ui.Fixed)
-	chkTitles.SetState(1)
-	chkLegend := ui.CreateCheckBox(frmChk, ui.AutoSize, "Show Legend", ui.Fixed)
-	chkValues := ui.CreateCheckBox(frmChk, ui.AutoSize, "Show Values", ui.Fixed)
-	chkValues.SetState(1)
-	chkFixed := ui.CreateCheckBox(frmChk, ui.AutoSize, "Fixed Width", ui.Fixed)
-	chkGap := ui.CreateCheckBox(frmChk, ui.AutoSize, "No Gap", ui.Fixed)
-	chkMulti := ui.CreateCheckBox(frmChk, ui.AutoSize, "MultiColored", ui.Fixed)
-	chkCustom := ui.CreateCheckBox(frmChk, ui.AutoSize, "Custom Colors", ui.Fixed)
-
-	ui.ActivateControl(view, chkTitles)
-
-	chkTitles.OnChange(func(state int) {
-		if state == 0 {
-			chkMarks.SetEnabled(false)
-			bch.SetShowTitles(false)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		} else if state == 1 {
-			chkMarks.SetEnabled(true)
-			bch.SetShowTitles(true)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		}
-	})
-	chkMarks.OnChange(func(state int) {
-		if state == 0 {
-			bch.SetShowMarks(false)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		} else if state == 1 {
-			bch.SetShowMarks(true)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		}
-	})
-	chkLegend.OnChange(func(state int) {
-		if state == 0 {
-			bch.SetLegendWidth(0)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		} else if state == 1 {
-			bch.SetLegendWidth(10)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		}
-	})
-	chkValues.OnChange(func(state int) {
-		if state == 0 {
-			bch.SetValueWidth(0)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		} else if state == 1 {
-			bch.SetValueWidth(5)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		}
-	})
-	chkMulti.OnChange(func(state int) {
-		if state == 0 {
-			d := getBarData(nodeID)
-			bch.SetData(d)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		} else if state == 1 {
-			d := getBarData(nodeID)
-
-			bch.SetData(d)
-			ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-		}
-	})
-	chkFixed.OnChange(func(state int) {
-		if state == 0 {
-			bch.SetAutoSize(true)
-		} else if state == 1 {
-			bch.SetAutoSize(false)
-		}
-		ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-	})
-	chkGap.OnChange(func(state int) {
-		if state == 1 {
-			bch.SetBarGap(0)
-		} else if state == 0 {
-			bch.SetBarGap(1)
-		}
-		ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-	})
-	chkCustom.OnChange(func(state int) {
-		if state == 0 {
-			bch.OnDrawCell(nil)
-		} else if state == 1 {
-			bch.OnDrawCell(customColored)
-		}
-		ui.PutEvent(ui.Event{Type: ui.EventRedraw})
-	})
-
-	btnQuit := ui.CreateButton(view, 12, 2, "Quit", 1)
-    btnQuit.OnClick(func(ev ui.Event) {
-        go ui.Stop()
-    })
-
-	return bch
-}
-
-func mainLoop(nodeID string) {
-	// Every application must create a single Composer and
-	// call its intialize method
-	ui.InitLibrary()
-	defer ui.DeinitLibrary()
-
-	b := createView(nodeID)
-	b.SetBarGap(1)
-	d := getBarData(nodeID)
-	b.SetData(d)
-	b.SetValueWidth(5)
-	b.SetAutoSize(false)
-
-	// start event processing loop - the main core of the library
-	ui.MainLoop()
-
-
-
-	
-}
 
 func main() {
-	nodeID := os.Getenv("NODE_ID")
-	if nodeID == "" {
-		fmt.Printf("NODE_ID env. var is not set!")
-		os.Exit(1)
+	dbFile =  os.Args[1]
+
+	// The presentation slides.
+	slides := []Slide{
+		Cover,
+		TextView1,
+		Table,
+		TreeView,
 	}
+
+	// The bottom row has some info on where we are.
+	info := tview.NewTextView().
+		SetDynamicColors(true).
+		SetRegions(true).
+		SetWrap(false)
+
 	
-	mainLoop(nodeID)
+	
+	// Create the pages for all slides.
+	currentSlide := 0
+	info.Highlight(strconv.Itoa(currentSlide))
+	pages := tview.NewPages()
+	previousSlide := func() {
+		currentSlide = (currentSlide - 1 + len(slides)) % len(slides)
+		info.Highlight(strconv.Itoa(currentSlide)).
+			ScrollToHighlight()
+		pages.SwitchToPage(strconv.Itoa(currentSlide))
+	}
+	nextSlide := func() {
+		currentSlide = (currentSlide + 1) % len(slides)
+		info.Highlight(strconv.Itoa(currentSlide)).
+			ScrollToHighlight()
+		pages.SwitchToPage(strconv.Itoa(currentSlide))
+	}
+	for index, slide := range slides {
+		title, primitive := slide(nextSlide)
+		pages.AddPage(strconv.Itoa(index), primitive, true, index == currentSlide)
+		fmt.Fprintf(info, `%d ["%d"][darkcyan]%s[white][""]  `, index+1, index, title)
+	}
+
+	// Create the main layout.
+	layout := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(pages, 0, 1, true).
+		AddItem(info, 1, 1, false)
+
+	// Shortcuts to navigate the slides.
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlN {
+			nextSlide()
+		} else if event.Key() == tcell.KeyCtrlP {
+			previousSlide()
+		}
+		return event
+	})
+
+	// Start the application.
+	if err := app.SetRoot(layout, true).Run(); err != nil {
+		panic(err)
+	}
 }
