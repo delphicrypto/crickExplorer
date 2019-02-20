@@ -41,6 +41,18 @@ func Equal(a, b []byte) bool {
     return true
 }
 
+func targetToDifficultyFloat64(target *big.Int) float64 {
+	maxTarget := targetFromTargetBits(0)
+	return float64(new(big.Int).Div(maxTarget, target).Uint64())
+}
+
+func invertArray(s []float64) []float64 {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+        s[i], s[j] = s[j], s[i]
+    }
+    return s
+}
+
 func targetToDifficulty(target *big.Int) *big.Int {
 	maxTarget := targetFromTargetBits(0)
 	return new(big.Int).Div(maxTarget, target)

@@ -50,9 +50,8 @@ func main() {
 	// The presentation slides.
 	slides := []Slide{
 		Cover,
-		TextView1,
 		Table,
-		TreeView,
+		Grid,
 	}
 
 	// The bottom row has some info on where we are.
