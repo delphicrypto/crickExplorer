@@ -21,6 +21,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
 	cc "github.com/delphicrypto/blockchain_go"
+	"github.com/fsnotify/fsnotify"
 )
 
 // Slide is a function which returns the slide's main primitive and its title.
@@ -32,17 +33,7 @@ type Slide func(nextSlide func()) (title string, content tview.Primitive)
 var app = tview.NewApplication()
 var chain *cc.Blockchain
 var dbFile string
-func updateTime() {
-	chain = cc.NewBlockchain(dbFile)
-	defer chain.CloseDB()
-	// for {
-	// 	time.Sleep(refreshInterval)
-	// 	app.QueueUpdateDraw(func() {
-	// 		sideBar.SetText(currentTimeString())
-	// 	})
-	// }
-}
-
+var watcher *fsnotify.Watcher
 
 func main() {
 	dbFile =  os.Args[1]
@@ -99,6 +90,30 @@ func main() {
 		}
 		return event
 	})
+
+	watcher, _ = fsnotify.NewWatcher()
+    
+    defer watcher.Close()
+
+    // out of the box fsnotify can watch a single file, or a single directory
+    if err := watcher.Add(dbFile); err != nil {
+        fmt.Println("ERROR", err)
+    }
+    // go func() {
+    //     for {
+    //         select {
+    //         // watch for events
+    //         case event := <-watcher.Events:
+    //             updateMain(main)
+    //             updateTable(table, blockDisplay)
+    //             app.draw()
+
+    //             // watch for errors
+    //         case err := <-watcher.Errors:
+    //             fmt.Println("ERROR", err)
+    //         }
+    //     }
+    // }()
 
 	// Start the application.
 	if err := app.SetRoot(layout, true).Run(); err != nil {

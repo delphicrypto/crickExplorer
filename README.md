@@ -24,3 +24,5 @@ go run *.go /path/to/blockchain.db
 ```
 
 Note: you can do this in a second terminal while keeping open the blockchain, the blockexplorer will update in real time.
+
+## TODO

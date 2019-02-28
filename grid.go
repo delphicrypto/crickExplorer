@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 	"math"
 	"github.com/gdamore/tcell"
 	"github.com/rivo/tview"
@@ -18,6 +19,26 @@ func barText(tw *tview.TextView, h int) {
 		}
 	}
 	fmt.Fprint(tw, fmt.Sprintln("[teal]▝▀▀▘"))
+}
+
+func updateMain(tw *tview.TextView) {
+	tw.Clear()
+	data := []float64{}
+    chain = cc.NewBlockchain(dbFile)
+    defer chain.CloseDB()
+    bci := chain.Iterator()
+    for i := 0; i < 120; i ++{
+    	block := bci.Next()
+    	diff := 30.0 * math.Log(targetToDifficultyFloat64(block.Target))
+    	data = append(data, diff)
+    	if len(block.PrevBlockHash) == 0 {
+			break
+		}
+    }
+    
+    graph := asciigraph.Plot(invertArray(data))
+
+    fmt.Fprint(tw, graph)
 }
 
 // Grid demonstrates the grid layout.
@@ -45,13 +66,12 @@ func Grid(nextSlide func()) (title string, content tview.Primitive) {
 		SetScrollable(false).
 		SetDynamicColors(true)
 	sideBar := newPrimitive("Side Bar")
-
+	header := newPrimitive("Difficulty")
 	grid := tview.NewGrid().
 		SetRows(3, 0, 3).
 		SetColumns(0, -4, 0).
 		SetBorders(true).
-		AddItem(newPrimitive("Statistics "), 0, 0, 1, 3, 0, 0, true).
-		AddItem(newPrimitive("Footer"), 2, 0, 1, 3, 0, 0, false)
+		AddItem(header, 0, 0, 1, 3, 0, 0, true)
 
 	// Layout for screens narrower than 100 cells (menu and side bar are hidden).
 	grid.AddItem(menu, 0, 0, 0, 0, 0, 0, false).
@@ -72,25 +92,23 @@ func Grid(nextSlide func()) (title string, content tview.Primitive) {
 	pages.AddPage("grid", grid, true, true).
 		AddPage("modal", modal, false, false)
 
-	//barText(main, 5)
-	
-    data := []float64{}
-    chain = cc.NewBlockchain(dbFile)
-    defer chain.CloseDB()
-    bci := chain.Iterator()
-    for {
-    	block := bci.Next()
-    	diff := math.Log(targetToDifficultyFloat64(block.Target))
-    	data = append(data, diff)
-    	data = append(data, diff)
-    	if len(block.PrevBlockHash) == 0 {
-			break
-		}
-    }
-    
-    graph := asciigraph.Plot(invertArray(data))
+	go func() {
+        for {
+            select {
+            // watch for events
+            case <-watcher.Events:
+                updateMain(main)
+                app.Draw()
 
-    fmt.Fprint(main, graph)
+                // watch for errors
+            case err := <-watcher.Errors:
+                fmt.Println("ERROR", err)
+            }
+        time.Sleep(250 * time.Millisecond)
+        }
+    }()
+	
+    
 	return "Graphs", pages
 }
 
